@@ -1,4 +1,5 @@
-import Booking from "../models/Booking";
+import Booking from "../models/Booking.js";
+import Movie from '../models/Movie.js'
 import { clerkClient } from "@clerk/express";
 
 
@@ -17,7 +18,7 @@ export const getUserBookings = async (req, res) => {
 }
 
 //API controller Function to add Favorite movie in Clerk User Metadata
-export const getFavorite = async (req, res) => {
+export const updateFavorite = async (req, res) => {
     try {
 
         const { movieId } = req.body
@@ -29,11 +30,32 @@ export const getFavorite = async (req, res) => {
 
         if (!user.privateMetadata.favorites.includes(movieId)) {
             user.privateMetadata.favorites.push(movieId)
+        } else {
+            user.privateMetadata.favorites = user.privateMetadata.favorites.filter(item => item !== movieId)
         }
 
-        await clerkClient.users.updateUserMetadata(userId,{privateMetadata:user.privateMetadata})
+        await clerkClient.users.updateUserMetadata(userId, { privateMetadata: user.privateMetadata })
+
+        res.json({ success: true, message: "favorite movie updated" })
 
     } catch (error) {
+        console.error(error.message)
+        res.json({ success: false, message: error.message })
+    }
+}
+
+export const getFavorites = async (req, res) => {
+    try {
+
+        const user = await clerkClient.users.getUser(req.auth().userId)
+        const favorites = user.privateMetadata.favorites
+
+        // Getting movies from database
+
+        const movies = await Movie.find({_id:{$in:favorites}})
+        res.json({success:true,movies})
+    } catch (error) {
+        console.error(error.message)
         res.json({ success: false, message: error.message })
     }
 }
