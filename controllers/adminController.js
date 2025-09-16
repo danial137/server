@@ -1,10 +1,19 @@
 import Booking from "../models/Booking.js"
 import Show from "../models/Show.js"
-
+import { clerkClient } from '@clerk/express'
 
 //Api to check if user is admin or not
 export const isadmin = async (req, res) => {
-    res.json({ success: true, isadmin: true })
+    try {
+        const userId = req.auth.userId; // یا req.auth() بسته به نسخه Clerk
+        const user = await clerkClient.users.getUser(userId);
+
+        const isAdmin = user.privateMetadata.role === "admin";
+        res.json({ success: true, isAdmin });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: error.message });
+    }
 }
 
 
